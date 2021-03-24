@@ -1,17 +1,18 @@
 # Login and select subscription
 az login
-az account set -s SUB_NAME
+# az account set -s SUB_NAME
 
 # Deploy Terraform stuff
 terraform init
 terraform apply -auto-approve
 
 #Update the storage account name from the Terraform output
-sa_name=STORAGE_ACCOUNT_NAME
+STORAGE_ACCOUNT_NAME=...
+echo $STORAGE_ACCOUNT_NAME
 
-az storage file upload --account-name $sa_name --share-name vault-data --source vault-config.hcl 
-az storage file upload --account-name $sa_name --share-name vault-data --source vault-cert.crt --path certs
-az storage file upload --account-name $sa_name --share-name vault-data --source vault-cert.key --path certs
+az storage file upload --account-name $STORAGE_ACCOUNT_NAME --share-name vault-data --source vault-config.hcl 
+az storage file upload --account-name $STORAGE_ACCOUNT_NAME --share-name vault-data --source vault-cert.crt --path certs
+az storage file upload --account-name $STORAGE_ACCOUNT_NAME --share-name vault-data --source vault-cert.key --path certs
 
 # Launch the container using the Terraform output
 
@@ -29,17 +30,18 @@ vault operator unseal
 
 vault login
 
-vault secrets enable kv
+# vault secrets enable kv
+vault secrets enable -path=secrets kv
 
-vault kv put kv/tacos meat=chicken
+vault kv put secrets/tacos meat=chicken
 
-vault kv get kv/tacos
+vault kv get secrets/tacos
 
 # Delete the container using the Terraform output when you're done
 
 # Delete the files in the cert directory if you plan to delete everything
-az storage file delete --account-name $sa_name --share-name vault-data --path certs/vault-cert.crt
-az storage file delete --account-name $sa_name --share-name vault-data --path certs/vault-cert.key
+az storage file delete --account-name $STORAGE_ACCOUNT_NAME --share-name vault-data --path certs/vault-cert.crt
+az storage file delete --account-name $STORAGE_ACCOUNT_NAME --share-name vault-data --path certs/vault-cert.key
 
 # Destroy the terraform resources
 terraform destroy -auto-approve
